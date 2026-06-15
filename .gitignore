@@ -1,0 +1,9 @@
+xcuserdata/
+DerivedData/
+build/
+*.ipa
+Pods/
+.build/
+.swiftpm/
+.DS_Store
+GoogleService-Info.plist

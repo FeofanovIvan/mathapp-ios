@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Custom Math Keyboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/katex@0.13.0/dist/katex.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+
+    <style>
+        .math-input {
+            opacity: 0;
+            max-height: 0px;
+        }
+        .keyboard {
+            display: none; /* Скрываем клавиатурную панель */
+        }
+        .key {
+            user-select: none;
+            padding: 5px 10px;
+            margin: 5px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+        .key:hover {
+            background-color: #ddd;
+        }
+        #mathRender {
+            border: 2px solid transparent;
+            border-bottom: 2px solid #00ff00;
+            padding: 5px;
+            background-color: transparent;
+            min-height: 20px;
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+<div id="mathInput" class="math-input" placeholder="Введите ответ"></div>
+<div id="mathRender">
+    <span id="placeholder">Введите ответ</span>
+</div>
+<div class="keyboard" id="keyboard">
+    <!-- Клавиши будут добавлены сюда, но останутся скрытыми -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.13.0/dist/katex.min.js"></script>
+<script>
+
+    const keys = [
+         "+", "1", "2", "3", "(", ")", "",
+            "-", "4", "5", "6", "ln(", "log_{", "",
+            "*", "7", "8", "9", "\\sqrt{", "^{", "sin(",
+            "\\frac{", ".", "0", "x", "}", "e", "cos(",
+            "tg(", "ctg(", "arcs(", "arcc(", "arct(", "arcct(", "<", ">", "x", "y", "a", "b", "c", "\\pi"
+    ];
+    const keyboard = document.getElementById('keyboard');
+    let mathInput = ""; // Текущее математическое выражение в текстовом формате
+
+    keys.forEach(key => {
+        const button = document.createElement('button');
+        button.textContent = key;
+        button.className = 'key';
+        button.onclick = () => handleKeyPress(key);
+        keyboard.appendChild(button);
+    });
+
+    function handleKeyPress(key) {
+        if (key === "C") { // Очистка ввода
+            mathInput = "";
+        } else {
+            mathInput += key;
+        }
+        renderMath();
+    }
+
+
+    function renderMath() {
+        const mathRender = document.getElementById('mathRender');
+        katex.render(mathInput, mathRender, {
+            throwOnError: false
+        });
+    }
+
+    renderMath(); // Инициализация отображения
+</script>
+
+
+</body>
+</html>

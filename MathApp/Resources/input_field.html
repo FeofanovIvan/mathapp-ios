@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Custom Math Keyboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/katex@0.13.0/dist/katex.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/decimal.js/10.3.1/decimal.min.js"></script>
+
+    <style>
+        .math-input {
+            opacity: 0;
+            max-height: 0px;
+        }
+        .keyboard {
+            display: none; /* Скрываем клавиатурную панель */
+        }
+        .key {
+            user-select: none;
+            padding: 5px 10px;
+            margin: 5px;
+            background-color: #f0f0f0;
+            cursor: pointer;
+        }
+        .key:hover {
+            background-color: #ddd;
+        }
+        #mathRender {
+            border: 2px solid transparent;
+            border-bottom: 2px solid #00ff00;
+            padding: 5px;
+            background-color: transparent;
+            min-height: 20px;
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+<div id="mathInput" class="math-input" placeholder="Введите ответ"></div>
+<div id="mathRender"></div>
+<div class="keyboard" id="keyboard">
+    <!-- Клавиши будут добавлены сюда, но останутся скрытыми -->
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/katex@0.13.0/dist/katex.min.js"></script>
+<script>
+    const keys = [
+        "+", "1", "2", "3", "(", ")", "",
+        "-", "4", "5", "6", "ln(", "log_{", "",
+        "*", "7", "8", "9", "\\sqrt[n]{", "^{", "sin",
+        "\\frac{", ".", "0", "x", "}", "e", "cos",
+        "tg", "ctg", "arcs", "arcc", "arct", "arcct", "<","\\cup", ">", "y", "a", "b", "c", "\\pi", "x"
+    ];
+    const keyboard = document.getElementById('keyboard');
+    const mathInput = document.getElementById('mathInput');
+    const mathRender = document.getElementById('mathRender');
+    let lastActionData = ""; // Для хранения данных последнего действия
+    var isAnswerCorrect = true;
+
+    keys.forEach(key => {
+        const button = document.createElement('button');
+        button.textContent = key;
+        button.className = 'key';
+        button.onclick = () => {
+            console.log(`Нажата клавиша: ${key}`); // Лог при нажатии клавиши
+            mathInput.textContent += key;
+            renderMath();
+        };
+        keyboard.appendChild(button);
+    });
+
+    function checkAnswer() {
+        console.log("Вызвана функция checkAnswer");
+    }
+
+    function renderMath() {
+        console.log("Рендеринг выражения с помощью KaTeX: ", mathInput.textContent);
+        katex.render(mathInput.textContent, mathRender, {
+            throwOnError: false
+        });
+    }
+
+    function insertText(latexText) {
+        console.log("Вставка текста: ", latexText);
+        mathInput.textContent = latexText;
+        renderMath();
+    }
+
+    function latexToMathjs(latex) {
+    console.log("Преобразование LaTeX в math.js формат: ", latex);
+    let mathjsExpr = removeCursor(latex); // Удаление курсора, если он есть
+
+    // Заменяем LaTeX выражения на формат, понятный Math.js
+    mathjsExpr = mathjsExpr.replace(/\\geq/g, '>=');
+    mathjsExpr = mathjsExpr.replace(/\\leq/g, '<=');
+
+
+    mathjsExpr = mathjsExpr.replace(/\\sqrt\[\]{([^}]+)}/g, 'sqrt($1)');
+
+    mathjsExpr = mathjsExpr.replace(/,/g, '.');
+    mathjsExpr = mathjsExpr.replace(/\\sqrt\[([^\]]+)\]{([^}]+)}/g, 'nthRoot($2, $1)');
+
+
+    mathjsExpr = mathjsExpr.replace(/\\log_\\{([^}]+)\\}\\{([^}]+)\\}/g, 'log($2, $1)');
+    mathjsExpr = mathjsExpr.replace(/\\log_{(\d+)}\s*\\left\(([^)]+)\s*\\right\)/g, '(log($2) / log($1))');
+    mathjsExpr = mathjsExpr.replace(/log_\{(\d+)\}\(([^)]+)\)/g, '(log($2) / log($1))');
+
+ mathjsExpr = mathjsExpr.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1)/($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{([^}]+)\}(\d+)\^\\circ/g, '$1($3 * pi / 180)^($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)(\d+)\^\\circ/g, '$1($2 * pi / 180)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{([^}]+)\}(\d+)/g, '$1($3)^($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)(\d+)/g, '$1($2)');
+
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}\((\w)\)/g, '$1($3)^($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}(\w)/g, '$1($3)^($2)');
+
+
+    mathjsExpr = mathjsExpr.replace(/\\cdot/g, '*');
+
+
+    mathjsExpr = mathjsExpr.replace(/(\d+)\\circ/g, '($1 * pi / 180)');
+    mathjsExpr = mathjsExpr.replace(/\\tan\(([^)]+)\)/g, 'tan($1)');
+    mathjsExpr = mathjsExpr.replace(/\\cot\(([^)]+)\)/g, 'cot($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arcsin\(([^)]+)\)/g, 'asin($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arccos\(([^)]+)\)/g, 'acos($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arctan\(([^)]+)\)/g, 'atan($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arccot\(([^)]+)\)/g, 'acot($1)');
+
+    mathjsExpr = mathjsExpr.replace(/(\d+)\^{([^\)]+)\)/g, '$1^($2)');
+
+    mathjsExpr = mathjsExpr.replace(/\\ln\(([^)]+)\)/g, 'log($1)');
+
+    mathjsExpr = mathjsExpr.replace(/\\sin\(([^)]+)\)/g, 'sin($1)');
+    mathjsExpr = mathjsExpr.replace(/\\cos\(([^)]+)\)/g, 'cos($1)');
+    mathjsExpr = mathjsExpr.replace(/\\tan\(([^)]+)\)/g, 'tan($1)');
+    mathjsExpr = mathjsExpr.replace(/\\pi/g, 'pi');
+    mathjsExpr = mathjsExpr.replace(/\\e/g, 'e');
+    mathjsExpr = mathjsExpr.replace(/\\left/g, '');
+    mathjsExpr = mathjsExpr.replace(/\\right/g, '');
+    mathjsExpr = mathjsExpr.replace(/\\{/g, '(');
+    mathjsExpr = mathjsExpr.replace(/\\}/g, ')');
+    mathjsExpr = mathjsExpr.replace(/\^\{([^}]+)\}/g, '^($1)');
+    mathjsExpr = mathjsExpr.replace(/\\/g, '');
+    mathjsExpr = mathjsExpr.replace(/times/g, '*');
+
+
+    // Заменяем числа перед переменными на формат умножения
+    mathjsExpr = mathjsExpr.replace(/(\d)([xyabc])/g, '$1*$2');
+
+
+mathjsExpr = mathjsExpr.replace(/\{/g, '(');
+mathjsExpr = mathjsExpr.replace(/\}/g, ')');
+
+    console.log("Преобразованное выражение после замены: ", mathjsExpr);
+    return mathjsExpr;
+}
+
+function validateUserInput(latex) {
+    return latex.replace(/\\sqrt\[\]{}/g, '\\sqrt');
+}
+
+
+    function removeCursor(latex) {
+        console.log("Удаление курсора из выражения: ", latex);
+        return latex.replace(/\\lceil/g, ''); // Удаление символов курсора, если они есть
+    }
+
+    function setDisplayError(isError) {
+        console.log("Установка отображения ошибки: ", isError);
+        if (isError) {
+            mathRender.style.color = 'red';
+        } else {
+            mathRender.style.color = 'black'; // Или любой другой цвет, который вы используете по умолчанию
+        }
+    }
+
+    function replaceVariablesWithOne(expr) {
+    console.log("Исходное выражение: ", expr);
+
+    // Заменяем переменные x, y, a, b, c на 1
+    let replacedExpr = expr.replace(/[xyabc]/g, '(1)');
+    console.log("После замены переменных на 1: ", replacedExpr);
+
+    // Добавляем явное умножение между числом и функцией
+    replacedExpr = replacedExpr.replace(/(\d)(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)/g, '$1*$2');
+    console.log("После добавления умножения между числом и функцией: ", replacedExpr);
+
+    // Обрабатываем степени в тригонометрических функциях с переменными
+    replacedExpr = replacedExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}\((\w)\)/g, '$1($3)^($2)');
+    replacedExpr = replacedExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}(\w)/g, '$1($3)^($2)');
+    console.log("После обработки степеней в тригонометрических функциях с переменными аргументами: ", replacedExpr);
+
+    // Заменяем log_{a}(b) на (log(b) / log(a))
+    replacedExpr = replacedExpr.replace(/log_\{(\d+)\}\(([^)]+)\)/g, '(log($2) / log($1))');
+    console.log("После замены логарифмов по основанию: ", replacedExpr);
+
+    // Добавляем явное умножение между числом и логарифмом
+    replacedExpr = replacedExpr.replace(/(\d)\s*\((log\([^)]+\)\s*\/\s*log\([^)]+\))\)/g, '$1*$2');
+    console.log("После добавления умножения между числом и логарифмом: ", replacedExpr);
+
+    return replacedExpr;
+}
+
+
+
+    function hasVariables(expr) {
+        return /[xyabc]/.test(expr);
+    }
+
+    function evaluateExpression(expr) {
+        try {
+            const node = math.parse(expr);
+            const code = node.compile();
+            return code.evaluate();
+        } catch (error) {
+            console.error("Ошибка при вычислении выражения: ", error);
+            throw error;
+        }
+    }
+
+    function roundToDecimalPlace(value, decimalPlaces) {
+        const factor = Math.pow(10, decimalPlaces);
+        return Math.round(value * factor) / factor;
+    }
+
+    function checkForEqualitySignAndCalculate() {
+    console.log("Проверка на наличие знака равенства или неравенства и вычисление");
+    const inputText = mathInput.textContent;
+    const operators = [ '<=', '>=','=', '\\leq', '\\geq', '<', '>'];
+    let operatorFound = null;
+
+    // Поиск оператора в введенном тексте
+    for (let operator of operators) {
+        if (inputText.includes(operator)) {
+            operatorFound = operator;
+            break;
+        }
+    }
+
+    if (!operatorFound) {
+        console.log("Оператор равенства или неравенства отсутствует");
+        setDisplayError(true);
+        return false;
+    }
+
+    const [latexLeftSide, latexRightSide] = inputText.split(operatorFound);
+    const leftSide = latexToMathjs(latexLeftSide);
+    const rightSide = latexToMathjs(latexRightSide);
+
+    if (hasVariables(leftSide) || hasVariables(rightSide)) {
+        console.log("Обнаружены переменные, сравнение без вычисления");
+        return compareMathInputWithData();
+    }
+
+    try {
+        const leftValue = evaluateExpression(leftSide);
+        const rightValue = evaluateExpression(rightSide);
+
+        const roundedLeftValue = roundToDecimalPlace(leftValue, 3); // Округление до тысячных
+        const roundedRightValue = roundToDecimalPlace(rightValue, 3); // Округление до тысячных
+
+        console.log(`Вычисленные значения: leftValue=${roundedLeftValue}, rightValue=${roundedRightValue}`);
+        console.log(`Типы данных: leftValue=${typeof roundedLeftValue}, rightValue=${typeof roundedRightValue}`);
+
+        let isEqual;
+        switch (operatorFound) {
+            case '<=':
+                isEqual = roundedLeftValue <= roundedRightValue;
+                break;
+            case '>=':
+                isEqual = roundedLeftValue >= roundedRightValue;
+                break;
+            case '=':
+                isEqual = roundedLeftValue === roundedRightValue;
+                break;
+
+            case '<':
+                isEqual = roundedLeftValue < roundedRightValue;
+                break;
+            case '>':
+                isEqual = roundedLeftValue > roundedRightValue;
+                break;
+            case "\\leq":
+                    isEqual = roundedLeftValue <= roundedRightValue;
+                    break;
+            case "\\geq":
+                    isEqual = roundedLeftValue >= roundedRightValue;
+                    break;
+        }
+
+        console.log(`Результаты сравнения: ${isEqual}, ${roundedLeftValue} ${operatorFound} ${roundedRightValue}`);
+        setDisplayError(!isEqual);
+        return isEqual;
+    } catch (error) {
+        console.error("Ошибка при вычислении выражений: ", error);
+        setDisplayError(true);
+        return false;
+    }
+}
+
+
+    function compareMathInputWithData() {
+    console.log("Сравнение пользовательского ввода с ожидаемым ответом");
+    console.log("Исходный пользовательский ввод:", mathInput.textContent);
+    console.log("Исходные данные действия:", lastActionData);
+
+    const userInput = latexToMathjs(mathInput.textContent).replace(/\s/g, '');
+    const actionData = lastActionData.replace(/\s/g, '').replace(/times/g, '*');
+
+    console.log("Обработанный пользовательский ввод:", userInput);
+    console.log("Обработанные данные действия:", actionData);
+
+    const inequalitySigns = ['<=','>=','<', '>', '\\leq', '\\geq'];
+
+    if (hasVariables(userInput) || hasVariables(actionData)) {
+        console.log("Обнаружены переменные. Замена переменных на 1 и вычисление.");
+        const simplifiedUserInput = replaceVariablesWithOne(userInput);
+        const simplifiedActionData = replaceVariablesWithOne(actionData);
+
+        console.log("Упрощенный пользовательский ввод:", simplifiedUserInput);
+        console.log("Упрощенные данные действия:", simplifiedActionData);
+
+        try {
+            const userInequality = inequalitySigns.find(sign => simplifiedUserInput.includes(sign));
+            const actionInequality = inequalitySigns.find(sign => simplifiedActionData.includes(sign));
+
+            if (userInequality || actionInequality) {
+                console.log("Обнаружено неравенство после замены переменных на 1.");
+                console.log("Пользовательский знак неравенства:", userInequality);
+                console.log("Знак неравенства в данных действия:", actionInequality);
+
+                const userParts = splitInequality(simplifiedUserInput, userInequality);
+                const actionParts = splitInequality(simplifiedActionData, actionInequality);
+
+                console.log("Части пользовательского ввода:", userParts);
+                console.log("Части данных действия:", actionParts);
+
+                const resultsUser = userParts.map(part => roundToDecimalPlace(evaluateExpression(part), 3));
+                const resultsAction = actionParts.map(part => roundToDecimalPlace(evaluateExpression(part), 3));
+
+                console.log(`Результаты вычислений пользовательского ввода: ${resultsUser}`);
+                console.log(`Результаты вычислений ожидаемого ответа: ${resultsAction}`);
+
+                const isEqualParts = resultsUser.every((result, index) => result === resultsAction[index]);
+                const isEqualSign = userInequality === actionInequality;
+
+                console.log(`Совпадение частей: ${isEqualParts}, Совпадение знака: ${isEqualSign}`);
+
+                const isEqual = isEqualParts && isEqualSign;
+                setDisplayError(!isEqual);
+
+                return isEqual;
+            } else {
+                console.log("Обработка выражений с равенствами после замены переменных на 1");
+
+                const [userInputLeft, userInputRight] = simplifiedUserInput.split('=');
+                const [actionDataLeft, actionDataRight] = simplifiedActionData.split('=');
+
+                console.log("Левая часть пользовательского ввода:", userInputLeft);
+                console.log("Левая часть данных действия:", actionDataLeft);
+
+                const userResultLeft = evaluateExpression(userInputLeft);
+                const actionResultLeft = evaluateExpression(actionDataLeft);
+
+                const roundedUserResultLeft = roundToDecimalPlace(userResultLeft, 3); // Округление до тысячных
+                const roundedActionResultLeft = roundToDecimalPlace(actionResultLeft, 3); // Округление до тысячных
+
+                console.log(`Результат вычисления левой части пользовательского ввода: ${roundedUserResultLeft}, Результат вычисления левой части ожидаемого ответа: ${roundedActionResultLeft}`);
+
+                const isEqualLeft = roundedUserResultLeft === roundedActionResultLeft;
+
+                let isEqualRight = true;
+                if (userInputRight && actionDataRight) {
+                    console.log("Правая часть пользовательского ввода:", userInputRight);
+                    console.log("Правая часть данных действия:", actionDataRight);
+
+                    const userResultRight = evaluateExpression(userInputRight);
+                    const actionResultRight = evaluateExpression(actionDataRight);
+
+                    const roundedUserResultRight = roundToDecimalPlace(userResultRight, 3); // Округление до тысячных
+                    const roundedActionResultRight = roundToDecimalPlace(actionResultRight, 3); // Округление до тысячных
+
+                    console.log(`Результат вычисления правой части пользовательского ввода: ${roundedUserResultRight}, Результат вычисления правой части ожидаемого ответа: ${roundedActionResultRight}`);
+
+                    isEqualRight = roundedUserResultRight === roundedActionResultRight;
+                }
+
+                console.log(`Совпадение левой части: ${isEqualLeft}, Совпадение правой части: ${isEqualRight}`);
+
+                const isEqual = isEqualLeft && isEqualRight;
+                setDisplayError(!isEqual);
+
+                return isEqual;
+            }
+        } catch (error) {
+            console.error("Ошибка при вычислении выражений: ", error);
+            setDisplayError(true);
+            return false;
+        }
+    }
+
+    try {
+        const userInequality = inequalitySigns.find(sign => userInput.includes(sign));
+        const actionInequality = inequalitySigns.find(sign => actionData.includes(sign));
+
+        if (userInequality || actionInequality) {
+            console.log("Обнаружено неравенство.");
+            console.log("Пользовательский знак неравенства:", userInequality);
+            console.log("Знак неравенства в данных действия:", actionInequality);
+
+            const userParts = splitInequality(userInput, userInequality);
+            const actionParts = splitInequality(actionData, actionInequality);
+
+            console.log("Части пользовательского ввода:", userParts);
+            console.log("Части данных действия:", actionParts);
+
+            const resultsUser = userParts.map(part => roundToDecimalPlace(evaluateExpression(part), 3));
+            const resultsAction = actionParts.map(part => roundToDecimalPlace(evaluateExpression(part), 3));
+
+            console.log(`Результаты вычислений пользовательского ввода: ${resultsUser}`);
+            console.log(`Результаты вычислений ожидаемого ответа: ${resultsAction}`);
+
+            const isEqualParts = resultsUser.every((result, index) => result === resultsAction[index]);
+            const isEqualSign = userInequality === actionInequality;
+
+            console.log(`Совпадение частей: ${isEqualParts}, Совпадение знака: ${isEqualSign}`);
+
+            const isEqual = isEqualParts && isEqualSign;
+            setDisplayError(!isEqual);
+
+            return isEqual;
+        }
+
+        console.log("Обработка выражений с равенствами");
+
+        const [userInputLeft, userInputRight] = userInput.split('=');
+        const [actionDataLeft, actionDataRight] = actionData.split('=');
+
+        console.log("Левая часть пользовательского ввода:", userInputLeft);
+        console.log("Левая часть данных действия:", actionDataLeft);
+
+        const userResultLeft = evaluateExpression(userInputLeft);
+        const actionResultLeft = evaluateExpression(actionDataLeft);
+
+        const roundedUserResultLeft = roundToDecimalPlace(userResultLeft, 3); // Округление до тысячных
+        const roundedActionResultLeft = roundToDecimalPlace(actionResultLeft, 3); // Округление до тысячных
+
+        console.log(`Результат вычисления левой части пользовательского ввода: ${roundedUserResultLeft}, Результат вычисления левой части ожидаемого ответа: ${roundedActionResultLeft}`);
+
+        const isEqualLeft = roundedUserResultLeft === roundedActionResultLeft;
+
+        let isEqualRight = true;
+        if (userInputRight && actionDataRight) {
+            console.log("Правая часть пользовательского ввода:", userInputRight);
+            console.log("Правая часть данных действия:", actionDataRight);
+
+            const userResultRight = evaluateExpression(userInputRight);
+            const actionResultRight = evaluateExpression(actionDataRight);
+
+            const roundedUserResultRight = roundToDecimalPlace(userResultRight, 3); // Округление до тысячных
+            const roundedActionResultRight = roundToDecimalPlace(actionResultRight, 3); // Округление до тысячных
+
+            console.log(`Результат вычисления правой части пользовательского ввода: ${roundedUserResultRight}, Результат вычисления правой части ожидаемого ответа: ${roundedActionResultRight}`);
+
+            isEqualRight = roundedUserResultRight === roundedActionResultRight;
+        }
+
+        console.log(`Совпадение левой части: ${isEqualLeft}, Совпадение правой части: ${isEqualRight}`);
+
+        const isEqual = isEqualLeft && isEqualRight;
+        setDisplayError(!isEqual);
+
+        return isEqual;
+    } catch (error) {
+        console.error("Ошибка при вычислении или сравнении выражений:", error);
+        setDisplayError(true);
+        return false;
+    }
+}
+
+function splitInequality(input, inequalitySign) {
+    const parts = [];
+    let remainingInput = input;
+    while (remainingInput.includes(inequalitySign)) {
+        const [left, ...rest] = remainingInput.split(inequalitySign);
+        parts.push(left);
+        remainingInput = rest.join(inequalitySign);
+    }
+    parts.push(remainingInput);
+    return parts;
+}
+
+function processStepAction(action) {
+        console.log("Получено действие шага:", action);
+        const mathjsFormattedAction = latexToMathjs(action);
+        console.log("Данные действия после преобразования в math.js формат:", mathjsFormattedAction);
+
+        lastActionData = mathjsFormattedAction; // Сохраняем преобразованные данные
+
+        if (mathInput.textContent.includes("=")|| mathInput.textContent.includes(">=")|| mathInput.textContent.includes("<=") || mathInput.textContent.includes("<") || mathInput.textContent.includes(">") || mathInput.textContent.includes("\\leq") || mathInput.textContent.includes("\\geq")) {
+            const equalityCheck = checkForEqualitySignAndCalculate();
+            if (!equalityCheck) {
+                isAnswerCorrect = false;
+            } else {
+                isAnswerCorrect = compareMathInputWithData();
+            }
+        } else {
+            isAnswerCorrect = compareMathInputWithData();
+        }
+        checkAnswer(); // Вызываем для обработки результата
+    }
+
+
+    function processStepAction(action) {
+        console.log("Получено действие шага:", action);
+        const mathjsFormattedAction = latexToMathjs(action);
+        console.log("Данные действия после преобразования в math.js формат:", mathjsFormattedAction);
+
+        lastActionData = mathjsFormattedAction; // Сохраняем преобразованные данные
+
+        if (mathInput.textContent.includes("=")|| mathInput.textContent.includes(">=")|| mathInput.textContent.includes("<=") || mathInput.textContent.includes("<") || mathInput.textContent.includes(">") || mathInput.textContent.includes("\\leq") || mathInput.textContent.includes("\\geq")) {
+            const equalityCheck = checkForEqualitySignAndCalculate();
+            if (!equalityCheck) {
+                isAnswerCorrect = false;
+            } else {
+                isAnswerCorrect = compareMathInputWithData();
+            }
+        } else {
+            isAnswerCorrect = compareMathInputWithData();
+        }
+        checkAnswer(); // Вызываем для обработки результата
+    }
+
+    function processStepAction(action) {
+        console.log("Получено действие шага:", action);
+        const mathjsFormattedAction = latexToMathjs(action);
+        console.log("Данные действия после преобразования в math.js формат:", mathjsFormattedAction);
+
+        lastActionData = mathjsFormattedAction; // Сохраняем преобразованные данные
+
+        if (mathInput.textContent.includes("=")|| mathInput.textContent.includes(">=")|| mathInput.textContent.includes("<=") || mathInput.textContent.includes("<") || mathInput.textContent.includes(">") || mathInput.textContent.includes("\\leq") || mathInput.textContent.includes("\\geq")) {
+            const equalityCheck = checkForEqualitySignAndCalculate();
+            if (!equalityCheck) {
+                isAnswerCorrect = false;
+            } else {
+                isAnswerCorrect = compareMathInputWithData();
+            }
+        } else {
+            isAnswerCorrect = compareMathInputWithData();
+        }
+        checkAnswer(); // Вызываем для обработки результата
+    }
+
+    renderMath();
+</script>
+
+</body>
+</html>

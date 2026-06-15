@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Math Comparison</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.4.4/math.min.js"></script>
+</head>
+<body>
+<script>
+    function latexToMathjs(latex) {
+        let mathjsExpr = removeCursor(latex); // Удаление курсора, если он есть
+
+    // Заменяем LaTeX выражения на формат, понятный Math.js
+
+    mathjsExpr = mathjsExpr.replace(/\\cup/g, '==');
+    mathjsExpr = mathjsExpr.replace(/\\geq/g, '>=');
+    mathjsExpr = mathjsExpr.replace(/\\leq/g, '<=');
+
+
+
+    // Заменяем переменные x, y, a, b, c на число 1
+    mathjsExpr = mathjsExpr.replace(/\bx\b|\by\b|\ba\b|\bb\b|\bc\b/g, '1');
+
+    // Удаляем лишние пробелы
+    mathjsExpr = mathjsExpr.replace(/\s+/g, '');
+
+        mathjsExpr = mathjsExpr.replace(/log_\{(\d+)\}\(\(([^)]+)\)\)/g, '(log($2)/log($1))');
+    mathjsExpr = mathjsExpr.replace(/log_\{(\d+)\}\(([^)]+)\)/g, '(log($2)/log($1))'); // Дополнительная обработка логарифмов без внешних скобок
+
+    // Заменяем деления
+    mathjsExpr = mathjsExpr.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '($1)/($2)');
+
+
+
+    mathjsExpr = mathjsExpr.replace(/\\sqrt\[\]{([^}]+)}/g, 'sqrt($1)');
+    mathjsExpr = mathjsExpr.replace(/\\sqrt{([^}]+)}/g, 'sqrt($1)');
+     // Заменяем запятые на точки
+    mathjsExpr = mathjsExpr.replace(/,/g, '.');
+    mathjsExpr = mathjsExpr.replace(/\\sqrt\[([^\]]+)\]{([^}]+)}/g, 'nthRoot($2, $1)');
+    mathjsExpr = mathjsExpr.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, '($1)/($2)');
+    mathjsExpr = mathjsExpr.replace(/\\frac{([^}]+)}{([^}]+)}/g, '($1)/($2)');
+    console.log("деление: ", mathjsExpr);
+
+    // Заменяем log_{a}(b) на (log(b) / log(a))
+    mathjsExpr = mathjsExpr.replace(/log_\{(\d+)\}\(([^)]+)\)/g, '(log($2) / log($1))');
+
+    console.log("логарифм 1: ", mathjsExpr);
+
+    mathjsExpr = mathjsExpr.replace(/\\log_\\{([^}]+)\\}\\{([^}]+)\\}/g, 'log($2, $1)');
+    mathjsExpr = mathjsExpr.replace(/\\log_{(\d+)}\s*\\left\(([^)]+)\s*\\right\)/g, '(log($2) / log($1))');
+    mathjsExpr = mathjsExpr.replace(/log_\{(\d+)\}\(([^)]+)\)/g, '(log($2) / log($1))');
+    console.log("логарифм 2: ", mathjsExpr);
+
+
+
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{([^}]+)\}(\d+)\^\\circ/g, '$1($3 * pi / 180)^($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)(\d+)\^\\circ/g, '$1($2 * pi / 180)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{([^}]+)\}(\d+)/g, '$1($3)^($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)(\d+)/g, '$1($2)');
+
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}\((\w)\)/g, '$1($3)^($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}(\w)/g, '$1($3)^($2)');
+
+
+    mathjsExpr = mathjsExpr.replace(/\\cdot/g, '*');
+
+
+    mathjsExpr = mathjsExpr.replace(/(\d+)\\circ/g, '($1 * pi / 180)');
+    mathjsExpr = mathjsExpr.replace(/\\tan\(([^)]+)\)/g, 'tan($1)');
+    mathjsExpr = mathjsExpr.replace(/\\cot\(([^)]+)\)/g, 'cot($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arcsin\(([^)]+)\)/g, 'asin($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arccos\(([^)]+)\)/g, 'acos($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arctan\(([^)]+)\)/g, 'atan($1)');
+    mathjsExpr = mathjsExpr.replace(/\\arccot\(([^)]+)\)/g, 'acot($1)');
+
+    mathjsExpr = mathjsExpr.replace(/(\d+)\^{([^\)]+)\)/g, '$1^($2)');
+    mathjsExpr = mathjsExpr.replace(/\\ln\(([^)]+)\)/g, 'log($1)');
+
+    mathjsExpr = mathjsExpr.replace(/\\sin\(([^)]+)\)/g, 'sin($1)');
+    mathjsExpr = mathjsExpr.replace(/\\cos\(([^)]+)\)/g, 'cos($1)');
+    mathjsExpr = mathjsExpr.replace(/\\tan\(([^)]+)\)/g, 'tan($1)');
+    mathjsExpr = mathjsExpr.replace(/\\pi/g, 'pi');
+    mathjsExpr = mathjsExpr.replace(/\\e/g, 'e');
+    mathjsExpr = mathjsExpr.replace(/\\left/g, '');
+    mathjsExpr = mathjsExpr.replace(/\\right/g, '');
+    mathjsExpr = mathjsExpr.replace(/\^\{([^}]+)\}/g, '^($1)');
+    mathjsExpr = mathjsExpr.replace(/\\/g, '');
+    mathjsExpr = mathjsExpr.replace(/times/g, '*');
+
+
+
+
+    // Обрабатываем степени в тригонометрических функциях с переменными
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}\((\w)\)/g, '$1($3)^($2)');
+    mathjsExpr = mathjsExpr.replace(/(sin|cos|tan|cot|arcsin|arccos|arctan|arccot)\^\{(\d+)\}(\w)/g, '$1($3)^($2)');
+
+
+
+
+    // Заменяем переменные x, y, a, b, c на число 1
+    mathjsExpr = mathjsExpr.replace(/[xyabc]/g, '(1)');
+
+    // Добавляем явное умножение между числом и логарифмом
+    mathjsExpr = mathjsExpr.replace(/(\d)\s*\((log\([^)]+\)\s*\/\s*log\([^)]+\))\)/g, '$1*$2');
+
+
+    mathjsExpr = mathjsExpr.replace(/\{/g, '(');
+    mathjsExpr = mathjsExpr.replace(/\}/g, ')');
+
+
+    console.log("Преобразованное выражение после замены: ", mathjsExpr);
+    return mathjsExpr;
+    }
+
+    function removeCursor(latex) {
+        console.log("Удаление курсора из выражения: ", latex);
+        return latex.replace(/\\lceil/g, ''); // Удаление символов курсора, если они есть
+    }
+
+
+    function evaluateExpressions(userAnswer, correctAnswer) {
+    try {
+        const userExpr = latexToMathjs(userAnswer);
+        const correctExpr = latexToMathjs(correctAnswer);
+
+        // Используем регулярное выражение для извлечения частей и знаков
+        const userParts = userExpr.match(/([^\s<>=!]+|<=|>=|<|>|==|&&|\|\|)/g);
+        const correctParts = correctExpr.match(/([^\s<>=!]+|<=|>=|<|>|==|&&|\|\|)/g);
+
+        console.log(`User Parts: ${JSON.stringify(userParts)}`);
+        console.log(`Correct Parts: ${JSON.stringify(correctParts)}`);
+
+        // Проверяем знаки и сверяем каждую часть отдельно
+        let partsMatch = true;
+        for (let i = 0; i < Math.min(userParts.length, correctParts.length); i++) {
+            const userPart = userParts[i].trim();
+            const correctPart = correctParts[i].trim();
+
+            if (isOperator(userPart) && isOperator(correctPart)) {
+                // Проверка знаков
+                console.log(`Part ${i+1}: User Sign: ${userPart}, Correct Sign: ${correctPart}`);
+                if (userPart !== correctPart) {
+                    partsMatch = false;
+                    break;
+                }
+            } else {
+                // Проверка значений
+                try {
+                    const userResult = math.evaluate(userPart).toFixed(3); // Округляем до тысячных
+                    const correctResult = math.evaluate(correctPart).toFixed(3); // Округляем до тысячных
+                    console.log(`Part ${i+1}: User Result: ${userResult}, Correct Result: ${correctResult}`);
+                    if (userResult !== correctResult) {
+                        partsMatch = false;
+                        break;
+                    }
+                } catch (e) {
+                    console.log(`Error evaluating part ${i+1}: ${e}`);
+                    partsMatch = false;
+                    break;
+                }
+            }
+        }
+
+        // Проверяем равенство количества частей
+        if (userParts.length !== correctParts.length) {
+            partsMatch = false;
+        }
+
+        console.log("Parts match: " + partsMatch);
+        return partsMatch;
+    } catch (e) {
+        console.log("Error evaluating expressions: " + e);
+        return false;
+    }
+}
+
+function isOperator(part) {
+    return ['<=', '>=', '<', '>', '==', '&&', '||'].includes(part);
+}
+
+
+    // Тестирование преобразования и сравнения
+    const userAnswer1 = "(\\frac{\\pi}{6}+2a\\pi)(\\frac{5\\pi}{6}+2a\\pi)(-\\frac{11\\pi}{6})";
+    const correctAnswer1 = "(\\frac{\\pi}{6}+2a\\pi)(\\frac{5\\pi}{6}+2a\\pi)(-\\frac{11\\pi}{6})";
+    const result1 = evaluateExpressions(userAnswer1, correctAnswer1);
+    console.log("Evaluation result for complex expression: ", result1);
+
+    const userAnswer2 = "x\\geq5+10\\geqa";
+    const correctAnswer2 = "x<5+10\\geqa";
+    const result2 = evaluateExpressions(userAnswer2, correctAnswer2);
+    console.log("Evaluation result for simple number: ", result2);
+
+    const userAnswer3 = "7";
+    const correctAnswer3 = "7";
+    const result3 = evaluateExpressions(userAnswer3, correctAnswer3);
+    console.log("Evaluation result for another simple number: ", result3);
+
+    const userAnswer4 = "\\frac{7}{2}";
+    const correctAnswer4 = "1008";
+    const result4 = evaluateExpressions(userAnswer4, correctAnswer4);
+    console.log("Evaluation result for incorrect fraction: ", result4);
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24D81" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="FormulaEntity" representedClassName="FormulaEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="formula" optional="YES" attributeType="String"/>
+        <attribute name="formulaID" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <relationship name="block" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="QuestionBlockEntity" inverseName="formulas" inverseEntity="QuestionBlockEntity"/>
+    </entity>
+    <entity name="QuestionBlockEntity" representedClassName="QuestionBlockEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="blockID" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="referenceMaterial" optional="YES" attributeType="String"/>
+        <attribute name="videoLink" optional="YES" attributeType="String"/>
+        <relationship name="formulas" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="FormulaEntity" inverseName="block" inverseEntity="FormulaEntity"/>
+        <relationship name="tasks" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="TaskEntity" inverseName="block" inverseEntity="TaskEntity"/>
+    </entity>
+    <entity name="StepEntity" representedClassName="StepEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="solutionVariant" optional="YES" attributeType="String"/>
+        <attribute name="stepAction" optional="YES" attributeType="String"/>
+        <attribute name="stepID" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="stepText" optional="YES" attributeType="String"/>
+        <relationship name="task" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TaskEntity" inverseName="steps" inverseEntity="TaskEntity"/>
+    </entity>
+    <entity name="TaskEntity" representedClassName="TaskEntity" syncable="YES" codeGenerationType="class">
+        <attribute name="answer" optional="YES" attributeType="String"/>
+        <attribute name="drawingLink" optional="YES" attributeType="String"/>
+        <attribute name="given" optional="YES" attributeType="String"/>
+        <attribute name="hint" optional="YES" attributeType="String"/>
+        <attribute name="taskID" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="taskText" optional="YES" attributeType="String"/>
+        <relationship name="block" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="QuestionBlockEntity" inverseName="tasks" inverseEntity="QuestionBlockEntity"/>
+        <relationship name="steps" optional="YES" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="StepEntity" inverseName="task" inverseEntity="StepEntity"/>
+    </entity>
+</model>
